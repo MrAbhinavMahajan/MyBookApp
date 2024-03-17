@@ -5,11 +5,20 @@ import useComponentDidMount from '../../../hooks/useComponentDidMount';
 import useComponentWillUnmount from '../../../hooks/useComponentWillUnmount';
 import usePageView from '../../../hooks/usePageView';
 import usePageLeave from '../../../hooks/usePageLeave';
-import {ActivityIndicator, FlatList, RefreshControl, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  View,
+} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {styles} from './styles';
 import AppLottieView from '../../common/AppLottieView';
-import {LOADING_FLASK_ANIM} from '../../../utilities/Assets';
+import {
+  ERROR_404_PANDA_ANIM,
+  LOADING_FLASK_ANIM,
+} from '../../../utilities/Assets';
 import {BookDetailsCard} from './BookDetailsCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
@@ -24,6 +33,7 @@ const HomePageView = props => {
   usePageView(props, onPageView);
   usePageLeave(props, onPageLeave);
   const [loading, setLoading] = useState(true);
+  const [errorState, setErrorState] = useState(false);
   const [pageData, setPageData] = useState([]);
   const [searchPageData, setSearchPageData] = useState([]);
   const [searchText, setSearchText] = useState();
@@ -59,7 +69,9 @@ const HomePageView = props => {
       setSearchPageData(pageInfo?.docs);
       stopLoading();
     } catch (error) {
+      Alert.alert('Something went wrong, Try Again');
       stopLoading();
+      setErrorState(true);
     }
   };
 
@@ -76,7 +88,9 @@ const HomePageView = props => {
       setPageData(pageInfo);
       stopLoading();
     } catch (error) {
+      Alert.alert('Something went wrong, Try Again');
       stopLoading();
+      setErrorState(true);
     }
   };
 
@@ -130,6 +144,20 @@ const HomePageView = props => {
     );
   };
 
+  const renderErrorAnim = () => {
+    if (!errorState || loading) {
+      return <></>;
+    }
+    return (
+      <AppLottieView
+        source={ERROR_404_PANDA_ANIM}
+        autoPlay
+        loop
+        style={styles.lottieView}
+      />
+    );
+  };
+
   function debounce(func, delay) {
     return function (...args) {
       clearTimeout(timer?.current);
@@ -143,6 +171,9 @@ const HomePageView = props => {
   const debouncedSearchHandler = debounce(makeSearchAPICall, 500);
 
   const renderPageLayout = (visible = false) => {
+    if (errorState) {
+      return <></>;
+    }
     return (
       <View
         pointerEvents={loading ? 'none' : 'auto'}
@@ -200,6 +231,7 @@ const HomePageView = props => {
       <View style={[STYLES.screenContainerView, {paddingTop: insets.top}]}>
         {isInitialLoading && renderLoader()}
         {renderPageLayout(!isInitialLoading)}
+        {renderErrorAnim()}
       </View>
     );
   };
