@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useRef, useState} from 'react';
+import React, {memo, useCallback, useRef, useState} from 'react';
 import {STYLES} from '../../../utilities/Styles';
 import useComponentDidMount from '../../../hooks/useComponentDidMount';
 import useComponentWillUnmount from '../../../hooks/useComponentWillUnmount';
@@ -25,6 +25,7 @@ import _ from 'lodash';
 import {COLORS} from '../../../utilities/Colors';
 import AppTextInput from '../../common/AppTextInput';
 import AppText from '../../common/AppText';
+import {SCREEN_HEIGHT} from '../../../utilities/AppUtils';
 
 const HomePageView = props => {
   const insets = useSafeAreaInsets();
@@ -60,24 +61,27 @@ const HomePageView = props => {
   };
 
   const makeSearchAPICall = async () => {
-    startLoading();
-    try {
-      const apiURL = `https://openlibrary.org/search.json?q=${searchText}&availability&limit=10`;
-      const apiRes = await fetch(apiURL);
-      const apiResJson = await apiRes.json();
-      const pageInfo = apiResJson;
-      setSearchPageData(pageInfo?.docs);
-      stopLoading();
-    } catch (error) {
-      Alert.alert('Something went wrong, Try Again');
-      stopLoading();
-      setErrorState(true);
+    if (searchText?.length > 0) {
+      startLoading();
+      try {
+        const apiURL = `https://openlibrary.org/search.json?q=${searchText}&availability&limit=10`;
+        const apiRes = await fetch(apiURL);
+        const apiResJson = await apiRes.json();
+        const pageInfo = apiResJson;
+        setSearchPageData(pageInfo?.docs);
+        stopLoading();
+      } catch (error) {
+        console.log(error);
+        Alert.alert('Something went wrong, Try Again');
+        stopLoading();
+      }
     }
   };
 
   const makeBooksFetchAPICall = async () => {
     // Fetch Books
     startLoading();
+    setErrorState(false);
     try {
       const apiURL =
         'https://openlibrary.org/subjects/sci-fi.json?jscmd=details';
@@ -86,8 +90,8 @@ const HomePageView = props => {
       const pageInfo = apiResJson?.works;
       makeFavsFetchAPICall();
       setPageData(pageInfo);
-      stopLoading();
     } catch (error) {
+      console.log(error);
       Alert.alert('Something went wrong, Try Again');
       stopLoading();
       setErrorState(true);
@@ -112,7 +116,7 @@ const HomePageView = props => {
     // On Page Blur/ Leave
   }
 
-  const renderDetailedBookItem = propsData => {
+  const renderDetailedBookItem = useCallback(propsData => {
     return (
       <BookDetailsCard
         {...propsData}
@@ -121,9 +125,9 @@ const HomePageView = props => {
         refreshFavs={makeFavsFetchAPICall}
       />
     );
-  };
+  }, []);
 
-  const renderSearchedItem = propsData => {
+  const renderSearchedItem = useCallback(propsData => {
     const {item, index} = propsData || {};
     const {title} = item || {};
     return (
@@ -131,7 +135,7 @@ const HomePageView = props => {
         <AppText style={styles.searchedTextResult}>{title}</AppText>
       </View>
     );
-  };
+  }, []);
 
   const renderLoader = () => {
     return (
@@ -207,6 +211,9 @@ const HomePageView = props => {
             keyExtractor={(itm, idx) => idx.toString()}
             ItemSeparatorComponent={SearchedItemSeparatorComponent}
             contentContainerStyle={styles.listView}
+            removeClippedSubviews
+            initialNumToRender={10}
+            windowSize={SCREEN_HEIGHT}
           />
         ) : (
           <FlatList
@@ -219,6 +226,9 @@ const HomePageView = props => {
             ItemSeparatorComponent={BookItemSeparatorComponent}
             contentContainerStyle={styles.listView}
             keyboardShouldPersistTaps={'handled'}
+            removeClippedSubviews
+            initialNumToRender={5}
+            windowSize={SCREEN_HEIGHT}
           />
         )}
       </View>
