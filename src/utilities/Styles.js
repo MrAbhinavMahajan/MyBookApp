@@ -74,7 +74,7 @@ export const STYLES = StyleSheet.create({
   },
   screenContainerView: {
     flex: 1,
-    backgroundColor: COLORS.fullWhite,
+    backgroundColor: COLORS.basic700,
   },
   comingSoonScreenContainerView: {
     flex: 1,

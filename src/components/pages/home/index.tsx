@@ -1,12 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {STYLES} from '../../../utilities/Styles';
 import useComponentDidMount from '../../../hooks/useComponentDidMount';
 import useComponentWillUnmount from '../../../hooks/useComponentWillUnmount';
 import usePageView from '../../../hooks/usePageView';
 import usePageLeave from '../../../hooks/usePageLeave';
 import {ActivityIndicator, FlatList, RefreshControl, View} from 'react-native';
-import AppText from '../../common/AppText';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {styles} from './styles';
 import AppLottieView from '../../common/AppLottieView';
@@ -15,6 +14,8 @@ import {BookDetailsCard} from './BookDetailsCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
 import {COLORS} from '../../../utilities/Colors';
+import AppTextInput from '../../common/AppTextInput';
+import AppText from '../../common/AppText';
 
 const HomePageView = props => {
   const insets = useSafeAreaInsets();
@@ -24,8 +25,11 @@ const HomePageView = props => {
   usePageLeave(props, onPageLeave);
   const [loading, setLoading] = useState(true);
   const [pageData, setPageData] = useState([]);
+  const [searchPageData, setSearchPageData] = useState([]);
+  const [searchText, setSearchText] = useState();
   const favlistData = useRef([]);
-
+  const searchInputRef = useRef(null);
+  const timer = useRef();
   const startLoading = () => setLoading(true);
 
   const stopLoading = () => setLoading(false);
@@ -43,6 +47,20 @@ const HomePageView = props => {
         favlistData.current = [];
         stopLoading();
       });
+  };
+
+  const makeSearchAPICall = async () => {
+    startLoading();
+    try {
+      const apiURL = `https://openlibrary.org/search.json?q=${searchText}&availability&limit=10`;
+      const apiRes = await fetch(apiURL);
+      const apiResJson = await apiRes.json();
+      const pageInfo = apiResJson;
+      setSearchPageData(pageInfo?.docs);
+      stopLoading();
+    } catch (error) {
+      stopLoading();
+    }
   };
 
   const makeBooksFetchAPICall = async () => {
@@ -80,7 +98,7 @@ const HomePageView = props => {
     // On Page Blur/ Leave
   }
 
-  const renderItem = propsData => {
+  const renderDetailedBookItem = propsData => {
     return (
       <BookDetailsCard
         {...propsData}
@@ -88,6 +106,16 @@ const HomePageView = props => {
         refreshPage={refreshPage}
         refreshFavs={makeFavsFetchAPICall}
       />
+    );
+  };
+
+  const renderSearchedItem = propsData => {
+    const {item, index} = propsData || {};
+    const {title} = item || {};
+    return (
+      <View key={index}>
+        <AppText style={styles.searchedTextResult}>{title}</AppText>
+      </View>
     );
   };
 
@@ -102,25 +130,66 @@ const HomePageView = props => {
     );
   };
 
-  const renderPageLayout = () => {
+  function debounce(func, delay) {
+    return function (...args) {
+      clearTimeout(timer?.current);
+      timer.current = setTimeout(() => {
+        func.apply(this, args);
+        clearTimeout(timer?.current);
+      }, delay);
+    };
+  }
+
+  const debouncedSearchHandler = debounce(makeSearchAPICall, 500);
+
+  const renderPageLayout = (visible = false) => {
     return (
-      <View pointerEvents={loading ? 'none' : 'auto'}>
+      <View
+        pointerEvents={loading ? 'none' : 'auto'}
+        style={[
+          STYLES.flex01,
+          {display: visible ? 'flex' : 'none', justifyContent: 'center'},
+        ]}>
         {loading && (
           <View style={styles.contentLoader}>
             <ActivityIndicator size={'large'} color={COLORS.info500} />
           </View>
         )}
-        <FlatList
-          data={pageData}
-          renderItem={renderItem}
-          keyExtractor={(itm, idx) => idx.toString()}
-          ListHeaderComponent={ListHeaderComponent}
-          refreshControl={
-            <RefreshControl refreshing={false} onRefresh={refreshPage} />
-          }
-          ItemSeparatorComponent={ItemSeparatorComponent}
-          contentContainerStyle={styles.booklistView}
+
+        <AppTextInput
+          refCallback={searchInputRef}
+          placeholder={'Search book...'}
+          placeholderTextColor={COLORS.fullBlack}
+          containerStyle={styles.textInputView}
+          value={searchText}
+          onChangeText={txt => {
+            setSearchText(txt);
+            debouncedSearchHandler();
+          }}
+          style={styles.textInputStyle}
         />
+
+        {searchText && searchPageData?.length > 0 ? (
+          <FlatList
+            data={searchPageData}
+            renderItem={renderSearchedItem}
+            keyExtractor={(itm, idx) => idx.toString()}
+            ItemSeparatorComponent={SearchedItemSeparatorComponent}
+            contentContainerStyle={styles.listView}
+          />
+        ) : (
+          <FlatList
+            data={pageData}
+            renderItem={renderDetailedBookItem}
+            keyExtractor={(itm, idx) => idx.toString()}
+            refreshControl={
+              <RefreshControl refreshing={false} onRefresh={refreshPage} />
+            }
+            ItemSeparatorComponent={BookItemSeparatorComponent}
+            contentContainerStyle={styles.listView}
+            keyboardShouldPersistTaps={'handled'}
+          />
+        )}
       </View>
     );
   };
@@ -129,7 +198,8 @@ const HomePageView = props => {
     const isInitialLoading = _.isEmpty(pageData) && loading;
     return (
       <View style={[STYLES.screenContainerView, {paddingTop: insets.top}]}>
-        {isInitialLoading ? renderLoader() : renderPageLayout()}
+        {isInitialLoading && renderLoader()}
+        {renderPageLayout(!isInitialLoading)}
       </View>
     );
   };
@@ -137,12 +207,12 @@ const HomePageView = props => {
   return render();
 };
 
-const ListHeaderComponent = () => {
-  return <AppText style={styles.booklistTitleText}>Sci-Fi Books</AppText>;
+const SearchedItemSeparatorComponent = () => {
+  return <View style={styles.searchedItemSeparatorView} />;
 };
 
-const ItemSeparatorComponent = () => {
-  return <View style={styles.itemSeparatorView} />;
+const BookItemSeparatorComponent = () => {
+  return <View style={styles.bookItemSeparatorView} />;
 };
 
 export default HomePageView;

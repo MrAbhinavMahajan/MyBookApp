@@ -6,8 +6,6 @@ import {COLORS} from '../../../../utilities/Colors';
 
 export const styles = StyleSheet.create({
   bookCardView: {
-    borderWidth: 1,
-    backgroundColor: COLORS.basic700,
     width: SCREEN_WIDTH,
   },
   bookCardViewImgWrapper: {

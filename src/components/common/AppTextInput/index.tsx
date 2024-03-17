@@ -19,6 +19,7 @@ const AppTextInput = function (props: AppTextInputProps) {
     style,
     refCallback,
     value = '',
+    placeholderTextColor,
     ...remainingProps
   } = props;
 
@@ -30,7 +31,7 @@ const AppTextInput = function (props: AppTextInputProps) {
         allowFontScaling={false}
         autoCapitalize="none"
         style={[styles.textInputStyle, style]}
-        placeholderTextColor={'rgba(0, 0, 8, 0.3)'}
+        placeholderTextColor={placeholderTextColor || '#000'}
         ref={refCallback}
         {...remainingProps}
       />
