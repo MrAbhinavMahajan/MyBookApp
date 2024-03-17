@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useRef, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {STYLES} from '../../../utilities/Styles';
 import useComponentDidMount from '../../../hooks/useComponentDidMount';
 import useComponentWillUnmount from '../../../hooks/useComponentWillUnmount';
@@ -22,7 +22,7 @@ const HomePageView = props => {
   useComponentWillUnmount(componentWillUnmount);
   usePageView(props, onPageView);
   usePageLeave(props, onPageLeave);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [pageData, setPageData] = useState([]);
   const favlistData = useRef([]);
 
@@ -30,25 +30,31 @@ const HomePageView = props => {
 
   const stopLoading = () => setLoading(false);
 
-  const makeAPICall = async () => {
-    // Fetch Books
+  const makeFavsFetchAPICall = () => {
     startLoading();
     AsyncStorage.getItem('FAV_LIST')
       .then(res => {
         if (res) {
           favlistData.current = JSON.parse(res);
         }
+        stopLoading();
       })
       .catch(() => {
         favlistData.current = [];
+        stopLoading();
       });
+  };
 
+  const makeBooksFetchAPICall = async () => {
+    // Fetch Books
+    startLoading();
     try {
       const apiURL =
         'https://openlibrary.org/subjects/sci-fi.json?jscmd=details';
       const apiRes = await fetch(apiURL);
       const apiResJson = await apiRes.json();
       const pageInfo = apiResJson?.works;
+      makeFavsFetchAPICall();
       setPageData(pageInfo);
       stopLoading();
     } catch (error) {
@@ -57,18 +63,22 @@ const HomePageView = props => {
   };
 
   const refreshPage = () => {
-    makeAPICall();
+    makeBooksFetchAPICall();
   };
 
   function componentDidMount() {
-    makeAPICall();
+    makeBooksFetchAPICall();
   }
 
   function componentWillUnmount() {}
 
-  function onPageView() {}
+  function onPageView() {
+    // On Page Focus/ View
+  }
 
-  function onPageLeave() {}
+  function onPageLeave() {
+    // On Page Blur/ Leave
+  }
 
   const renderItem = propsData => {
     return (
@@ -76,6 +86,7 @@ const HomePageView = props => {
         {...propsData}
         favlistData={favlistData.current}
         refreshPage={refreshPage}
+        refreshFavs={makeFavsFetchAPICall}
       />
     );
   };
@@ -93,7 +104,7 @@ const HomePageView = props => {
 
   const renderPageLayout = () => {
     return (
-      <View>
+      <View pointerEvents={loading ? 'none' : 'auto'}>
         {loading && (
           <View style={styles.contentLoader}>
             <ActivityIndicator size={'large'} color={COLORS.info500} />

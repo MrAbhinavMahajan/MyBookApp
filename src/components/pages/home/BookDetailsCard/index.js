@@ -12,7 +12,7 @@ export const BookDetailsCard = ({
   item,
   index,
   favlistData = [],
-  refreshPage = () => {},
+  refreshFavs = () => {},
 }) => {
   const {title, authors, first_publish_year} = item || {};
   const bookId = item?.availability?.isbn;
@@ -28,7 +28,7 @@ export const BookDetailsCard = ({
   const saveFavList = list => {
     const stringifiedList = JSON.stringify(list);
     AsyncStorage.setItem('FAV_LIST', stringifiedList).then(() => {
-      refreshPage();
+      refreshFavs();
     });
   };
 
