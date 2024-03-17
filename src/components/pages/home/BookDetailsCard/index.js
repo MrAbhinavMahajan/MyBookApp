@@ -135,14 +135,6 @@ export const BookDetailsCard = ({
             {isFav ? 'Remove from Favorite' : 'Add To Favorite'}
           </AppText>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.mainCTA}
-          onPress={() => {
-            AsyncStorage.clear();
-          }}>
-          <AppText style={styles.mainCTAText}>Clear</AppText>
-        </TouchableOpacity>
       </View>
     );
   };
