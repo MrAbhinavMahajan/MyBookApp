@@ -6,22 +6,57 @@ import {FONTS} from '../../../../constants/Fonts';
 import {STYLES} from '../../../../utilities/Styles';
 import {fpx} from '../../../../libraries/responsive-pixels';
 import _ from 'lodash';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const BookDetailsCard = ({item, index}) => {
+export const BookDetailsCard = ({
+  item,
+  index,
+  favlistData = [],
+  refreshPage = () => {},
+}) => {
   const {title, authors, first_publish_year} = item || {};
   const bookId = item?.availability?.isbn;
   const authorsName = authors.map(el => el.name).join(', ');
   const [loading, setLoading] = useState(false);
   const [detailedData, setDetailedData] = useState();
-  const isFav = false;
-
+  const itmStorageKey = item?.key;
+  const isFav = favlistData.filter(el => el?.id === itmStorageKey).length > 0;
   const startLoading = () => setLoading(true);
 
   const stopLoading = () => setLoading(false);
 
-  const saveToFavorites = () => {};
+  const saveFavList = list => {
+    const stringifiedList = JSON.stringify(list);
+    AsyncStorage.setItem('FAV_LIST', stringifiedList).then(() => {
+      refreshPage();
+    });
+  };
 
-  const removeFromFavorites = () => {};
+  const addToFavorites = () => {
+    AsyncStorage.getItem('FAV_LIST')
+      .then(favlist => {
+        const list = !_.isEmpty(favlist) ? JSON.parse(favlist) : [];
+
+        list.push({
+          id: itmStorageKey,
+          isFav: 'true',
+        });
+
+        saveFavList(list);
+      })
+      .catch(console.log);
+  };
+
+  const removeFromFavorites = () => {
+    AsyncStorage.getItem('FAV_LIST')
+      .then(favlist => {
+        const list = !_.isEmpty(favlist) ? JSON.parse(favlist) : [];
+        const modifiedList = list.filter(el => el.id !== itmStorageKey);
+
+        saveFavList(modifiedList);
+      })
+      .catch(console.log);
+  };
 
   const makeAPICall = async () => {
     // Fetch Book Details
@@ -47,7 +82,7 @@ export const BookDetailsCard = ({item, index}) => {
     const {description, notes} = details || {};
 
     return (
-      <View style={styles.bookCardView} key={`${item?.key}_${index}`}>
+      <View style={styles.bookCardView} key={`${itmStorageKey}_${index}`}>
         <View style={styles.bookCardViewImgWrapper}>
           {loading ? (
             <View style={styles.imgLoader}>
@@ -95,10 +130,18 @@ export const BookDetailsCard = ({item, index}) => {
 
         <TouchableOpacity
           style={styles.mainCTA}
-          onPress={isFav ? removeFromFavorites : saveToFavorites}>
+          onPress={isFav ? removeFromFavorites : addToFavorites}>
           <AppText style={styles.mainCTAText}>
-            {isFav ? 'Remove from Favorites' : 'Save To Favorites'}
+            {isFav ? 'Remove from Favorite' : 'Add To Favorite'}
           </AppText>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.mainCTA}
+          onPress={() => {
+            AsyncStorage.clear();
+          }}>
+          <AppText style={styles.mainCTAText}>Clear</AppText>
         </TouchableOpacity>
       </View>
     );
