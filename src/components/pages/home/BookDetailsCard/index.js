@@ -1,22 +1,27 @@
 import React, {useEffect, useState} from 'react';
 import AppText from '../../../common/AppText';
-import {styles} from '../styles';
-import {ActivityIndicator, Image, View} from 'react-native';
+import {styles} from './styles';
+import {ActivityIndicator, Image, TouchableOpacity, View} from 'react-native';
 import {FONTS} from '../../../../constants/Fonts';
 import {STYLES} from '../../../../utilities/Styles';
 import {fpx} from '../../../../libraries/responsive-pixels';
 import _ from 'lodash';
 
 export const BookDetailsCard = ({item, index}) => {
-  const {title, authors, first_publish_year, availability} = item || {};
+  const {title, authors, first_publish_year} = item || {};
   const bookId = item?.availability?.isbn;
   const authorsName = authors.map(el => el.name).join(', ');
   const [loading, setLoading] = useState(false);
   const [detailedData, setDetailedData] = useState();
+  const isFav = false;
 
   const startLoading = () => setLoading(true);
 
   const stopLoading = () => setLoading(false);
+
+  const saveToFavorites = () => {};
+
+  const removeFromFavorites = () => {};
 
   const makeAPICall = async () => {
     // Fetch Book Details
@@ -26,7 +31,6 @@ export const BookDetailsCard = ({item, index}) => {
       const apiRes = await fetch(apiURL);
       const apiResJson = await apiRes.json();
       const pageInfo = Object.values(apiResJson)[0];
-      console.log(pageInfo);
       setDetailedData(pageInfo);
       stopLoading();
     } catch (error) {
@@ -88,6 +92,14 @@ export const BookDetailsCard = ({item, index}) => {
         {!_.isEmpty(notes) && (
           <AppText style={styles.bookCardViewTitleText}>{notes}</AppText>
         )}
+
+        <TouchableOpacity
+          style={styles.mainCTA}
+          onPress={isFav ? removeFromFavorites : saveToFavorites}>
+          <AppText style={styles.mainCTAText}>
+            {isFav ? 'Remove from Favorites' : 'Save To Favorites'}
+          </AppText>
+        </TouchableOpacity>
       </View>
     );
   };
