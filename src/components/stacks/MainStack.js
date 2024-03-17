@@ -10,6 +10,7 @@ const MainStack = () => (
     initialRouteName={kROUTES.HOME_SCREEN}
     screenOptions={{
       gestureEnabled: false,
+      headerShown: false,
     }}>
     <Screen name={kROUTES.HOME_SCREEN} component={HomePageView} />
   </Navigator>
