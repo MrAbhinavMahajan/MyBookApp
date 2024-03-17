@@ -1,0 +1,33 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/Inter-Bold.otf",
+      "sha1": "9a8f4c33e0d0c1d40803471cd22d1f3567a5012b"
+    },
+    {
+      "path": "src/assets/fonts/Inter-Medium.otf",
+      "sha1": "32ab2a6e5572684b51b9daadda26598481a2a01f"
+    },
+    {
+      "path": "src/assets/fonts/Inter-Regular.otf",
+      "sha1": "09656d6e99ab197db567c423125f533aaf3772a3"
+    },
+    {
+      "path": "src/assets/fonts/NunitoSans.ttf",
+      "sha1": "0bc82dfdb6c913d99eedb88d55e5d61b33ecd210"
+    },
+    {
+      "path": "src/assets/fonts/PrimeformProDemo-Medium.otf",
+      "sha1": "442bfb16380d517972b0511872fc4158353cf60c"
+    },
+    {
+      "path": "src/assets/fonts/PrimeformProDemo-Regular.otf",
+      "sha1": "7751136523a565e331fb4d5c8ba68d7fae42b987"
+    },
+    {
+      "path": "src/assets/fonts/PrimeformProDemo-SemiBold.otf",
+      "sha1": "ba2139783d6aa615af0d66b09bb6db0bbe2d893c"
+    }
+  ]
+}
