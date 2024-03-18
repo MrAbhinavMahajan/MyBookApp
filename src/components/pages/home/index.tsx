@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {memo, useCallback, useRef, useState} from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import {STYLES} from '../../../utilities/Styles';
 import useComponentDidMount from '../../../hooks/useComponentDidMount';
 import useComponentWillUnmount from '../../../hooks/useComponentWillUnmount';
@@ -41,6 +41,8 @@ const HomePageView = props => {
   const favlistData = useRef([]);
   const searchInputRef = useRef(null);
   const timer = useRef();
+  const abortController = new AbortController();
+
   const startLoading = () => setLoading(true);
 
   const stopLoading = () => setLoading(false);
@@ -65,7 +67,9 @@ const HomePageView = props => {
       startLoading();
       try {
         const apiURL = `https://openlibrary.org/search.json?q=${searchText}&availability&limit=10`;
-        const apiRes = await fetch(apiURL);
+        const apiRes = await fetch(apiURL, {
+          signal: abortController.signal,
+        });
         const apiResJson = await apiRes.json();
         const pageInfo = apiResJson;
         setSearchPageData(pageInfo?.docs);
@@ -85,7 +89,9 @@ const HomePageView = props => {
     try {
       const apiURL =
         'https://openlibrary.org/subjects/sci-fi.json?jscmd=details';
-      const apiRes = await fetch(apiURL);
+      const apiRes = await fetch(apiURL, {
+        signal: abortController.signal,
+      });
       const apiResJson = await apiRes.json();
       const pageInfo = apiResJson?.works;
       makeFavsFetchAPICall();
@@ -106,7 +112,9 @@ const HomePageView = props => {
     makeBooksFetchAPICall();
   }
 
-  function componentWillUnmount() {}
+  function componentWillUnmount() {
+    abortController.abort();
+  }
 
   function onPageView() {
     // On Page Focus/ View
@@ -114,6 +122,7 @@ const HomePageView = props => {
 
   function onPageLeave() {
     // On Page Blur/ Leave
+    abortController.abort();
   }
 
   const renderDetailedBookItem = useCallback(propsData => {
