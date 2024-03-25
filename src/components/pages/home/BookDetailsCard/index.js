@@ -7,6 +7,11 @@ import {STYLES} from '../../../../utilities/Styles';
 import {fpx} from '../../../../libraries/responsive-pixels';
 import _ from 'lodash';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 
 export const BookDetailsCard = memo(
   ({item, index, favlistData = [], refreshFavs = () => {}}) => {
@@ -14,12 +19,31 @@ export const BookDetailsCard = memo(
     const bookId = item?.availability?.isbn;
     const authorsName = authors.map(el => el.name).join(', ');
     const [loading, setLoading] = useState(false);
-    const [detailedData, setDetailedData] = useState();
-    const itmStorageKey = item?.key;
+    const [detailedData, setDetailedData] = useState(); // Book details data fetched
+    const itmStorageKey = item?.key; // Storage key for favorite list item
     const isFav = favlistData.filter(el => el?.id === itmStorageKey).length > 0;
+    const abortController = new AbortController(); // API abort controller
+    const actionCTAScaleAnim = useSharedValue(1); // Value to be animated for scale effect
+
     const startLoading = () => setLoading(true);
 
     const stopLoading = () => setLoading(false);
+
+    const onPressIn = () => {
+      actionCTAScaleAnim.value = withSpring(
+        actionCTAScaleAnim.value === 1 ? 0.9 : 1,
+      );
+    };
+
+    const onPressOut = () => {
+      actionCTAScaleAnim.value = withSpring(1);
+    };
+
+    const animatedStyle = useAnimatedStyle(() => {
+      return {
+        transform: [{scale: actionCTAScaleAnim.value}],
+      };
+    });
 
     const saveFavList = list => {
       const stringifiedList = JSON.stringify(list);
@@ -59,7 +83,9 @@ export const BookDetailsCard = memo(
       startLoading();
       try {
         const apiURL = `https://openlibrary.org/api/books?bibkeys=ISBN:${bookId}&jscmd=viewapi&format=json`;
-        const apiRes = await fetch(apiURL);
+        const apiRes = await fetch(apiURL, {
+          signal: abortController.signal,
+        });
         const apiResJson = await apiRes.json();
         const pageInfo = Object.values(apiResJson)[0];
         setDetailedData(pageInfo);
@@ -71,6 +97,10 @@ export const BookDetailsCard = memo(
 
     useEffect(() => {
       makeAPICall();
+
+      return () => {
+        abortController.abort();
+      };
     }, []);
 
     const render = () => {
@@ -129,14 +159,17 @@ export const BookDetailsCard = memo(
           {!_.isEmpty(notes) && (
             <AppText style={styles.bookCardViewTitleText}>{notes}</AppText>
           )}
-
-          <TouchableOpacity
-            style={styles.mainCTA}
-            onPress={isFav ? removeFromFavorites : addToFavorites}>
-            <AppText style={styles.mainCTAText}>
-              {isFav ? 'Remove from Favorite' : 'Add To Favorite'}
-            </AppText>
-          </TouchableOpacity>
+          <Animated.View style={[styles.mainCTA, animatedStyle]}>
+            <TouchableOpacity
+              style={{flex: 1}}
+              onPressIn={onPressIn}
+              onPressOut={onPressOut}
+              onPress={isFav ? removeFromFavorites : addToFavorites}>
+              <AppText style={styles.mainCTAText}>
+                {isFav ? 'Remove from Favorite' : 'Add To Favorite'}
+              </AppText>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       );
     };

@@ -40,8 +40,8 @@ const HomePageView = props => {
   const [searchText, setSearchText] = useState();
   const favlistData = useRef([]);
   const searchInputRef = useRef(null);
-  const timer = useRef();
-  const abortController = new AbortController();
+  const searchInputDebounceTimer = useRef();
+  const abortController = new AbortController(); // API abort controller
 
   const startLoading = () => setLoading(true);
 
@@ -173,10 +173,10 @@ const HomePageView = props => {
 
   function debounce(func, delay) {
     return function (...args) {
-      clearTimeout(timer?.current);
-      timer.current = setTimeout(() => {
+      clearTimeout(searchInputDebounceTimer?.current);
+      searchInputDebounceTimer.current = setTimeout(() => {
         func.apply(this, args);
-        clearTimeout(timer?.current);
+        clearTimeout(searchInputDebounceTimer?.current);
       }, delay);
     };
   }
@@ -201,7 +201,7 @@ const HomePageView = props => {
         )}
 
         <AppTextInput
-          refCallback={searchInputRef}
+          ref={searchInputRef}
           placeholder={'Search book...'}
           placeholderTextColor={COLORS.fullBlack}
           containerStyle={styles.textInputView}

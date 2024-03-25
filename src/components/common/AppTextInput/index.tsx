@@ -1,23 +1,22 @@
-import React, {memo} from 'react';
+import React, {memo, forwardRef} from 'react';
 import {TextInput, View} from 'react-native';
 import {styles} from './styles';
+import _ from 'lodash';
 
 interface AppTextInputProps {
   LeftComponent: any;
   RightComponent: any;
   containerStyle: any;
   style: any;
-  refCallback: any;
   value?: any;
 }
 
-const AppTextInput = function (props: AppTextInputProps) {
+const AppTextInput = forwardRef(function (props: AppTextInputProps, ref: any) {
   const {
     LeftComponent,
     RightComponent,
     containerStyle,
     style,
-    refCallback,
     value = '',
     placeholderTextColor,
     ...remainingProps
@@ -25,25 +24,18 @@ const AppTextInput = function (props: AppTextInputProps) {
 
   return (
     <View style={[styles.containerStyle, containerStyle]}>
-      {LeftComponent}
+      {!_.isEmpty(LeftComponent) && LeftComponent}
       <TextInput
         value={`${value}`}
         allowFontScaling={false}
         autoCapitalize="none"
         style={[styles.textInputStyle, style]}
         placeholderTextColor={placeholderTextColor || '#000'}
-        ref={refCallback}
         {...remainingProps}
       />
-      {RightComponent}
+      {!_.isEmpty(RightComponent) && RightComponent}
     </View>
   );
-};
-
-AppTextInput.defaultProps = {
-  LeftComponent: <></>,
-  RightComponent: <></>,
-  refCallback: null,
-};
+});
 
 export default memo(AppTextInput);
