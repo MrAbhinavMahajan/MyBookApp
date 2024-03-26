@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useCallback, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {STYLES} from '../../../utilities/Styles';
 import useComponentDidMount from '../../../hooks/useComponentDidMount';
 import useComponentWillUnmount from '../../../hooks/useComponentWillUnmount';
@@ -38,6 +38,7 @@ const HomePageView = props => {
   const [pageData, setPageData] = useState([]);
   const [searchPageData, setSearchPageData] = useState([]);
   const [searchText, setSearchText] = useState();
+  const [, setSearchPageNumber] = useState(1);
   const favlistData = useRef([]);
   const searchInputRef = useRef(null);
   const searchInputDebounceTimer = useRef();
@@ -62,17 +63,19 @@ const HomePageView = props => {
       });
   };
 
-  const makeSearchAPICall = async () => {
-    if (searchText?.length > 0) {
+  const makeSearchAPICall = async (searchedText, pageNumber = 1) => {
+    console.log('Searched Query::', {searchedText, pageNumber});
+    if (searchedText?.length > 0) {
       startLoading();
       try {
-        const apiURL = `https://openlibrary.org/search.json?q=${searchText}&availability&limit=10`;
+        const apiURL = `https://openlibrary.org/search.json?q=${searchedText}&page=${pageNumber}&limit=15`;
         const apiRes = await fetch(apiURL, {
           signal: abortController.signal,
         });
         const apiResJson = await apiRes.json();
         const pageInfo = apiResJson;
-        setSearchPageData(pageInfo?.docs);
+        console.log('Searched Response: ', pageInfo);
+        setSearchPageData([...searchPageData, ...pageInfo?.docs]);
         stopLoading();
       } catch (error) {
         console.log(error);
@@ -103,6 +106,13 @@ const HomePageView = props => {
       setErrorState(true);
     }
   };
+
+  useEffect(() => {
+    if (_.isEmpty(searchText)) {
+      setSearchPageData([]);
+      setSearchPageNumber(1);
+    }
+  }, [searchText]);
 
   const refreshPage = () => {
     makeBooksFetchAPICall();
@@ -208,12 +218,12 @@ const HomePageView = props => {
           value={searchText}
           onChangeText={txt => {
             setSearchText(txt);
-            debouncedSearchHandler();
+            debouncedSearchHandler(txt);
           }}
           style={styles.textInputStyle}
         />
 
-        {searchText && searchPageData?.length > 0 ? (
+        {searchPageData?.length > 0 ? (
           <FlatList
             data={searchPageData}
             renderItem={renderSearchedItem}
@@ -221,8 +231,15 @@ const HomePageView = props => {
             ItemSeparatorComponent={SearchedItemSeparatorComponent}
             contentContainerStyle={styles.listView}
             removeClippedSubviews
-            initialNumToRender={10}
+            initialNumToRender={15}
             windowSize={SCREEN_HEIGHT}
+            onEndReached={_.throttle(() => {
+              setSearchPageNumber(pg => {
+                const modifiedPageNumber = parseInt(pg) + 1;
+                makeSearchAPICall(searchText, modifiedPageNumber);
+                return modifiedPageNumber;
+              });
+            }, 200)}
           />
         ) : (
           <FlatList
