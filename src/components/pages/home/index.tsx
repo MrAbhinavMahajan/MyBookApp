@@ -27,6 +27,7 @@ import AppTextInput from '../../common/AppTextInput';
 import AppText from '../../common/AppText';
 import {SCREEN_HEIGHT} from '../../../utilities/AppUtils';
 
+const PAGE_LIMIT = 16;
 const HomePageView = props => {
   const insets = useSafeAreaInsets();
   useComponentDidMount(componentDidMount);
@@ -68,7 +69,7 @@ const HomePageView = props => {
     if (searchedText?.length > 0) {
       startLoading();
       try {
-        const apiURL = `https://openlibrary.org/search.json?q=${searchedText}&page=${pageNumber}&limit=15`;
+        const apiURL = `https://openlibrary.org/search.json?title=${searchedText}&page=${pageNumber}&limit=${PAGE_LIMIT}`;
         const apiRes = await fetch(apiURL, {
           signal: abortController.signal,
         });
@@ -231,7 +232,7 @@ const HomePageView = props => {
             ItemSeparatorComponent={SearchedItemSeparatorComponent}
             contentContainerStyle={styles.listView}
             removeClippedSubviews
-            initialNumToRender={15}
+            initialNumToRender={PAGE_LIMIT}
             windowSize={SCREEN_HEIGHT}
             onEndReached={_.throttle(() => {
               setSearchPageNumber(pg => {
